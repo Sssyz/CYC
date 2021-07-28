@@ -69,13 +69,20 @@ func CreateGenesisBlock(txs []*Transaction) *Block{
 
 //将交易数据换为字节数组-》[]byte
 func (block *Block) HashTransactions() []byte{
-	var txHash []byte
-	//合并所有TXs(*[]Transaction)中的TxHash
-	for _,tx:=range block.Txs{
-		txHash = append(txHash,tx.TxHash...)
-	}
+	//var txHash []byte
+	////合并所有TXs(*[]Transaction)中的TxHash
+	//for _,tx:=range block.Txs{
+	//	txHash = append(txHash,tx.TxHash...)
+	//}
+	//
+	//return txHash
+	var transactions [][]byte
+	for _,tx := range block.Txs{
+		transactions = append(transactions,tx.Hash())
 
-	return txHash
+	}
+	mTree := NewMerkleTree(transactions)
+	return mTree.RootNode.Data
 }
 // 将区块序列化->[]byte
 func (block *Block) Serialize()[]byte{
