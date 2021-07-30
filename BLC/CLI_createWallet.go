@@ -4,10 +4,10 @@ import (
 	"fmt"
 )
 
-func(cli *CLI) createWallet(){
-	wallets := NewWallets()
+func(cli *CLI) createWallet(nodeID string){
+	wallets := NewWallets(nodeID)
 
-	wallets.CreateNewWallet()
+	wallets.CreateNewWallet(nodeID)
 
 	fmt.Println(wallets.WalletsMap)
 }

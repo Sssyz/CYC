@@ -3,9 +3,9 @@ package BLC
 import "fmt"
 
 //查余额
-func(cli *CLI) getBalance(address string){
+func(cli *CLI) getBalance(address string,nodeId string){
 	//fmt.Println("地址："+address)
-	blockchian := GetBlockChainObject()
+	blockchian := GetBlockChainObject(nodeId)
 	defer blockchian.DB.Close()
 	utxoSet := &UTXOSet{blockchian}
 	amount := utxoSet.GetBalance(address)

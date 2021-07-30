@@ -9,26 +9,26 @@ import (
 	"log"
 	"os"
 )
-const walletFile = "Wallets.dat"
+const walletFile = "Wallets_%s.dat"
 type Wallets struct {
 	WalletsMap map[string]*Wallet
 }
 
 // 创建钱包集合
-func NewWallets() *Wallets{
+func NewWallets(nodeID string) *Wallets{
 	wallets := &Wallets{}
 	wallets.WalletsMap = make(map[string]*Wallet)
-	wallets.LoadFromFile()
+	wallets.LoadFromFile(nodeID)
 	return wallets
 }
 
 // 创建一个新钱包
-func (w *Wallets) CreateNewWallet(){
+func (w *Wallets) CreateNewWallet(nodeID string){
 	wallet := NewWallet()
 	fmt.Printf("Address:%s\n",wallet.GetAddress())
 	w.WalletsMap[string(wallet.GetAddress())]=wallet
 	// 把所有数据保存起来
-	w.SavetoFile()
+	w.SavetoFile(nodeID)
 }
 
 //根据地址获得钱包对象
@@ -37,7 +37,8 @@ func(ws *Wallets) GetWallet(address string) *Wallet{
 }
 
 //加载钱包文件
-func(ws *Wallets) LoadFromFile() error{
+func(ws *Wallets) LoadFromFile(nodeId string) error{
+	walletFile := fmt.Sprintf(walletFile,nodeId)
 	if _,err := os.Stat(walletFile);os.IsNotExist(err){
 		return err
 	}
@@ -57,7 +58,7 @@ func(ws *Wallets) LoadFromFile() error{
 	return nil
 }
 //保存钱包，写入文件
-func(ws *Wallets) SavetoFile(){
+func(ws *Wallets) SavetoFile(nodeId string){
 	var content bytes.Buffer
 
 	//注册 为了可以序列化任何类型
@@ -69,6 +70,7 @@ func(ws *Wallets) SavetoFile(){
 		log.Panic(err)
 	}
 	// 覆盖源文件  无法遍历文件中的键值对，无法用键值对存储
+	walletFile := fmt.Sprintf(walletFile,nodeId)
 	err = ioutil.WriteFile(walletFile,content.Bytes(),0644)
 	if err!=nil{
 		log.Panic(err)

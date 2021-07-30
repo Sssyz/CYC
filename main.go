@@ -1,7 +1,7 @@
 package main
 
 import (
-	"pulicChain/part67-UTXOSet-update/BLC"
+	"pulicChain/part70-Node/BLC"
 )
 
 func main(){

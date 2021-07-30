@@ -2,8 +2,8 @@ package BLC
 
 import "fmt"
 
-func(cli *CLI) TestMethod(){
-	blockchain := GetBlockChainObject()
+func(cli *CLI) TestMethod(nodeId string){
+	blockchain := GetBlockChainObject(nodeId)
 
 	defer blockchain.DB.Close()
 

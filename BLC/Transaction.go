@@ -52,11 +52,12 @@ func NewCoinbaseTransaction(address string) *Transaction{
 }
 //（2）转账时的transaction
 
-func NewSimpleTransaction(from string,to string,amount int64,utxoSet *UTXOSet,txs []*Transaction)*Transaction{
+func NewSimpleTransaction(from string,to string,amount int64,utxoSet *UTXOSet,
+	txs []*Transaction,nodeID string)*Transaction{
 
 	var txInputs []*TXInput
 	var txOutputs []*TXOutput
-	wallets := NewWallets()
+	wallets := NewWallets(nodeID)
 	wallet := wallets.WalletsMap[from]
 	money,spendableUTXODic := utxoSet.FindSpendableUTXOs(from,amount,txs)
 	//消费

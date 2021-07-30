@@ -14,19 +14,21 @@ import (
 	"time"
 )
 
-const dbName = "blockchain.db"
+const dbName = "blockchain_%s.db"
 const blockTableName = "blocks"
 type BlockChain struct {
 	Tip []byte //最新区块的hash
 	DB *bolt.DB
 }
 
-func GetBlockChainObject() *BlockChain {
-	if !dbExsits(){
+func GetBlockChainObject(nodeID string) *BlockChain {
+	if !dbExsits(nodeID){
 		fmt.Println("创世区块不存在！")
 		os.Exit(1)
 	}
 	var Tip []byte
+	dbName := fmt.Sprintf(dbName,nodeID)
+	fmt.Println(dbName)
 	db, err := bolt.Open(dbName, 0600, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -47,9 +49,9 @@ func GetBlockChainObject() *BlockChain {
 }
 
 //1. 创建带有创世区块的区块链
-func CreateBlockchainWithGenesisBlock(address string) *BlockChain{
+func CreateBlockchainWithGenesisBlock(address string,nodeID string) *BlockChain{
 	//判断是否存在数据库
-	if(dbExsits()){
+	if(dbExsits(nodeID)){
 		fmt.Println("创世区块已存在！")
 		//在数据库中读取最新区块链
 		os.Exit(1)
@@ -58,6 +60,7 @@ func CreateBlockchainWithGenesisBlock(address string) *BlockChain{
 
 	// 当数据库不存在时，创建创世区块链
 	fmt.Println("正在创建创世区块。。。")
+	dbName := fmt.Sprintf(dbName,nodeID)
 	db, err := bolt.Open(dbName, 0600, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -182,7 +185,9 @@ func (blc *BlockChain) PrintChain(){
 }
 
 // 判断数据库是否存在
-func dbExsits() bool{
+func dbExsits(nodeID string) bool{
+	//生成不同节点的数据库文件
+	dbName := fmt.Sprintf(dbName,nodeID)
 	if _,err := os.Stat(dbName);os.IsNotExist(err){
 		return false
 	}
@@ -361,7 +366,7 @@ func(blockchain *BlockChain) FindSpendableUTXOs(from string,amount int,txs []*Tr
 	return value,spendAbleUTXO
 }
 //挖掘新的区块
-func (blockchain *BlockChain)MineNewBlock(from []string,to []string,amount []string){
+func (blockchain *BlockChain)MineNewBlock(from []string,to []string,amount []string,nodeId string){
 	//fmt.Println(from)
 	//fmt.Println(to)
 	//fmt.Println(amount)
@@ -379,7 +384,7 @@ func (blockchain *BlockChain)MineNewBlock(from []string,to []string,amount []str
 	for index,_ := range from{
 		amountint,_ := strconv.Atoi(amount[index])
 		//可能有多比交易，之前的交易还未存储到数据库中，在新建交易时，需要考虑已有的未保存的交易，因此传入txs
-		tx := NewSimpleTransaction(from[index],to[index],int64(amountint),utxoSet,txs)
+		tx := NewSimpleTransaction(from[index],to[index],int64(amountint),utxoSet,txs,nodeId)
 		txs = append(txs,tx)
 	}
 

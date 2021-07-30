@@ -19,6 +19,8 @@ func printUsage(){
 	fmt.Println("\t printchain --输出区块信息")
 	fmt.Println("\t getbalance -addresss --输出账号余额")
 	fmt.Println("\t test -addresss --测试")
+	fmt.Println("\t set_id -port PORT --设置端口节点号")
+	fmt.Println("\t port --访问的节点号")
 }
 func isVaildArgs(){
 	if len(os.Args)<2{
@@ -37,6 +39,8 @@ func isVaildArgs(){
 
 
 func(cli *CLI) Run(){
+	nodeId := GetEnvNodeId()
+
 	isVaildArgs()
 	testCmd := flag.NewFlagSet("test",flag.ExitOnError)
 	addresslistCmd :=flag.NewFlagSet("addresslist",flag.ExitOnError)
@@ -49,13 +53,22 @@ func(cli *CLI) Run(){
 	flagAmount := sendBlockCmd.String("amount","","转账金额")
 
 	printChainCmd := flag.NewFlagSet("printchain",flag.ExitOnError)
-
+	//节点号设置
+	setNodeIdCmd := flag.NewFlagSet("set_id",flag.ExitOnError)
+	//端口号参数
+	flagPortArg := setNodeIdCmd.String("port","","设置节点ID")
 	getBalanceCmd := flag.NewFlagSet("getbalance",flag.ExitOnError)
 	getBalanceWithAddress :=getBalanceCmd.String("address","","查询账号")
 
 	createBlockChainCmd := flag.NewFlagSet("createblockchain",flag.ExitOnError)
 	flagCreateBlockChainWithAddress :=createBlockChainCmd.String("address","","创建创世区块的地址")
+
 	switch os.Args[1] {
+	case "set_id":
+		err := setNodeIdCmd.Parse(os.Args[2:])
+		if err!=nil{
+			log.Panic(err)
+		}
 	case "test":
 		err := testCmd.Parse(os.Args[2:])
 		if err!=nil{
@@ -95,6 +108,14 @@ func(cli *CLI) Run(){
 		printUsage()
 		os.Exit(1)
 	}
+	if setNodeIdCmd.Parsed(){
+		if *flagPortArg==""{
+			fmt.Println("请输入端口...")
+			os.Exit(1)
+		}
+		cli.SetNodeId(*flagPortArg)
+	}
+
 	if sendBlockCmd.Parsed(){
 		if *flagFrom ==""||*flagTo ==""||*flagAmount ==""{
 			printUsage()
@@ -126,12 +147,12 @@ func(cli *CLI) Run(){
 			printUsage()
 
 		}
-		cli.send(from,to,amount)
+		cli.send(from,to,amount,nodeId)
 	}
 	if printChainCmd.Parsed(){
 
 		//fmt.Println("输出所有区块信息")
-		cli.printChain()
+		cli.printChain(nodeId)
 	}
 	if createBlockChainCmd.Parsed(){
 		if IsValidForAddress([]byte(*flagCreateBlockChainWithAddress))==false{
@@ -140,7 +161,7 @@ func(cli *CLI) Run(){
 			os.Exit(1)
 		}
 		//fmt.Println("创建创世区块")
-		cli.createGenesisBlockChain(*flagCreateBlockChainWithAddress)
+		cli.createGenesisBlockChain(*flagCreateBlockChainWithAddress,nodeId)
 	}
 	if getBalanceCmd.Parsed(){
 		if IsValidForAddress([]byte(*getBalanceWithAddress))==false{
@@ -148,18 +169,19 @@ func(cli *CLI) Run(){
 			printUsage()
 			os.Exit(1)
 		}
-		cli.getBalance(*getBalanceWithAddress)
+		cli.getBalance(*getBalanceWithAddress,nodeId)
 	}
 	// 创建钱包
 	if createWalletCmd.Parsed(){
 
-		cli.createWallet()
+		cli.createWallet(nodeId)
 	}
 	if addresslistCmd.Parsed(){
 
-		cli.addressList()
+		cli.addressList(nodeId)
 	}
 	if testCmd.Parsed(){
-		cli.TestMethod()
+		cli.TestMethod(nodeId)
 	}
+
 }
