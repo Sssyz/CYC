@@ -1,7 +1,7 @@
 package main
 
 import (
-	"pulicChain/part70-Node/BLC"
+	"pulicChain/part73-Node_NetRequest/BLC"
 )
 
 func main(){

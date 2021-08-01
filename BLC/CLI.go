@@ -21,6 +21,7 @@ func printUsage(){
 	fmt.Println("\t test -addresss --测试")
 	fmt.Println("\t set_id -port PORT --设置端口节点号")
 	fmt.Println("\t port --访问的节点号")
+	fmt.Println("\t start --启动节点")
 }
 func isVaildArgs(){
 	if len(os.Args)<2{
@@ -44,7 +45,7 @@ func(cli *CLI) Run(){
 	isVaildArgs()
 	testCmd := flag.NewFlagSet("test",flag.ExitOnError)
 	addresslistCmd :=flag.NewFlagSet("addresslist",flag.ExitOnError)
-
+	startCmd := flag.NewFlagSet("start",flag.ExitOnError)
 	createWalletCmd := flag.NewFlagSet("createwallet",flag.ExitOnError)
 
 	sendBlockCmd := flag.NewFlagSet("send",flag.ExitOnError)
@@ -64,6 +65,11 @@ func(cli *CLI) Run(){
 	flagCreateBlockChainWithAddress :=createBlockChainCmd.String("address","","创建创世区块的地址")
 
 	switch os.Args[1] {
+	case "start":
+		err := startCmd.Parse(os.Args[2:])
+		if err!=nil{
+			log.Panic(err)
+		}
 	case "set_id":
 		err := setNodeIdCmd.Parse(os.Args[2:])
 		if err!=nil{
@@ -108,6 +114,11 @@ func(cli *CLI) Run(){
 		printUsage()
 		os.Exit(1)
 	}
+	//节点启动服务
+	if startCmd.Parsed(){
+		cli.startNode(nodeId)
+	}
+
 	if setNodeIdCmd.Parsed(){
 		if *flagPortArg==""{
 			fmt.Println("请输入端口...")

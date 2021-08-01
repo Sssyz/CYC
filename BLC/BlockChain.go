@@ -101,50 +101,50 @@ func CreateBlockchainWithGenesisBlock(address string,nodeID string) *BlockChain{
 }
 
 // 增加区块到区块链中
-func(blc *BlockChain) AddBlockToBlockchain(txs []*Transaction){
-	var height int64
-	var preHash []byte
-	//获取新增区块的height和preHash
-	fmt.Println("开始挖矿。。。")
-	err:=blc.DB.View(func(tx *bolt.Tx)error{
-		b := tx.Bucket([]byte(blockTableName))
-		if b!=nil{
-			//blockHash := b.Get([]byte("l"))
-			block := DeSerialize(b.Get(blc.Tip))
-			height = block.Height+1
-			preHash = block.Hash
-		}
-		return nil
-	})
-	if err!=nil{
-		log.Panic(err)
-	}
-	// 创建新区块并添加数据库
-
-	err = blc.DB.Update(func(tx *bolt.Tx) error{
-		b := tx.Bucket([]byte(blockTableName))
-		if b!=nil{
-			newBlock := NewBlock(txs,height,preHash)
-			newBlockByte := newBlock.Serialize()
-			//添加区块信息值数据库
-			err :=b.Put(newBlock.Hash,newBlockByte)
-			if err!=nil{
-				log.Panic(err)
-			}
-
-			//更新区块链的Tip以及数据库的l
-			blc.Tip = newBlock.Hash
-			b.Put([]byte("l"),newBlock.Hash)
-			fmt.Println("挖矿成功！")
-		}
-
-		return nil
-	})
-	if err!=nil{
-		log.Panic(err)
-	}
-
-}
+//func(blc *BlockChain) AddBlockToBlockchain(txs []*Transaction){
+//	var height int64
+//	var preHash []byte
+//	//获取新增区块的height和preHash
+//	fmt.Println("开始挖矿。。。")
+//	err:=blc.DB.View(func(tx *bolt.Tx)error{
+//		b := tx.Bucket([]byte(blockTableName))
+//		if b!=nil{
+//			//blockHash := b.Get([]byte("l"))
+//			block := DeSerialize(b.Get(blc.Tip))
+//			height = block.Height+1
+//			preHash = block.Hash
+//		}
+//		return nil
+//	})
+//	if err!=nil{
+//		log.Panic(err)
+//	}
+//	// 创建新区块并添加数据库
+//
+//	err = blc.DB.Update(func(tx *bolt.Tx) error{
+//		b := tx.Bucket([]byte(blockTableName))
+//		if b!=nil{
+//			newBlock := NewBlock(txs,height,preHash)
+//			newBlockByte := newBlock.Serialize()
+//			//添加区块信息值数据库
+//			err :=b.Put(newBlock.Hash,newBlockByte)
+//			if err!=nil{
+//				log.Panic(err)
+//			}
+//
+//			//更新区块链的Tip以及数据库的l
+//			blc.Tip = newBlock.Hash
+//			b.Put([]byte("l"),newBlock.Hash)
+//			fmt.Println("挖矿成功！")
+//		}
+//
+//		return nil
+//	})
+//	if err!=nil{
+//		log.Panic(err)
+//	}
+//
+//}
 
 // 遍历输出所有区块的信息
 func (blc *BlockChain) PrintChain(){
@@ -556,4 +556,80 @@ func(blc *BlockChain)FindUTXOMap()map[string]*TXOutputs{
 		}
 	}
 	return utxoMap
+}
+
+// 获取当前区块链的高度
+func(bc *BlockChain) GetHeight() int64{
+	return bc.Iterator().Next().Height
+}
+
+// 获取区块链所有的区块哈希
+func(bc *BlockChain) GetBlockHashes() [][]byte{
+	var blockHashes [][]byte
+	bcit := bc.Iterator()
+	for{
+		block:=bcit.Next()
+		blockHashes = append(blockHashes,block.Hash)
+		if block.isBreakLoop(){
+			break
+		}
+	}
+	return blockHashes
+
+}
+//判断是否是创世区块
+func (block *Block)isBreakLoop() bool{
+	var hashInt big.Int
+	hashInt.SetBytes(block.PrevBlockHash)
+	if hashInt.Cmp(big.NewInt(0))==0{
+		return true
+	}else{
+		return false
+	}
+}
+
+// 获取指定哈希的区块
+func (bc *BlockChain) GetBlock(hash []byte) []byte{
+	var blockByte []byte
+	bc.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(blockTableName))
+		if b!=nil{
+			blockByte = b.Get(hash)
+		}
+		return nil
+	})
+	return blockByte
+
+}
+//添加区块
+func(bc *BlockChain) AddBlock(block *Block){
+
+	err:=bc.DB.Update(func(tx *bolt.Tx) error {
+		//1.获取数据表
+		b:=tx.Bucket([]byte(blockTableName))
+		if b!=nil{
+			//判断需要传入的区块是否存在
+			if b.Get(block.Hash)!=nil{
+				//已经存在，不需要添加
+				return nil
+			}
+			//不存在，添加到数据库
+			err:=b.Put(block.Hash,block.Serialize())
+			if err!=nil{
+				log.Printf("sync the block failed! %v\n",err)
+			}
+		}
+		blockHash := b.Get([]byte("l"))
+		latesBlock := b.Get(blockHash)
+		rawBlock := DeSerialize(latesBlock)
+		if rawBlock.Height<block.Height{
+			b.Put([]byte("l"),block.Hash)
+			bc.Tip = block.Hash
+		}
+		return nil
+	})
+	if err!=nil{
+		log.Printf("update the db when insert the new block failed!%v\n",err)
+	}
+	fmt.Printf("the new block is added!\n")
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	"log"
 	"time"
-
 )
 
 type Block struct {
@@ -107,3 +106,4 @@ func DeSerialize(blockByte []byte) *Block{
 	}
 	return &block
 }
+
